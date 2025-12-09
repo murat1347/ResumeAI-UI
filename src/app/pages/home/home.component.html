@@ -1,0 +1,529 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+  <!-- Header -->
+  <header class="bg-black/30 backdrop-blur-sm border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <h1 class="text-2xl font-bold text-white">ResumeAI</h1>
+        </div>
+        
+        @if (isLLMConfigured()) {
+          <div class="flex items-center gap-2 text-green-400">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="text-sm">{{ currentProvider() }} Bağlı</span>
+          </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  @if (errorMessage()) {
+    <div class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in">
+      {{ errorMessage() }}
+    </div>
+  }
+  
+  @if (successMessage()) {
+    <div class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in">
+      {{ successMessage() }}
+    </div>
+  }
+
+  <!-- Progress Steps -->
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex items-center justify-center gap-4 mb-8">
+      @for (step of [1, 2, 3, 4]; track step) {
+        <div class="flex items-center">
+          <div [class]="'w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ' + 
+            (currentStep() >= step ? 'bg-purple-500 text-white' : 'bg-white/10 text-white/50')">
+            {{ step }}
+          </div>
+          @if (step < 4) {
+            <div [class]="'w-16 h-1 mx-2 transition-all ' + 
+              (currentStep() > step ? 'bg-purple-500' : 'bg-white/10')"></div>
+          }
+        </div>
+      }
+    </div>
+    
+    <div class="text-center text-white/70 mb-8">
+      @switch (currentStep()) {
+        @case (1) { <span>Adım 1: API Yapılandırması</span> }
+        @case (2) { <span>Adım 2: CV Yükleme</span> }
+        @case (3) { <span>Adım 3: İş Gereksinimleri</span> }
+        @case (4) { <span>Adım 4: Analiz Sonuçları</span> }
+      }
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    
+    <!-- Step 1: API Configuration -->
+    @if (currentStep() === 1) {
+      <div class="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 max-w-xl mx-auto">
+        <h2 class="text-2xl font-bold text-white mb-6">🔑 API Yapılandırması</h2>
+        
+        <div class="space-y-6">
+          <!-- Provider Info from appsettings.json -->
+          @if (llmConfig()) {
+            <div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-white font-medium">{{ llmConfig()?.provider }}</p>
+                  <p class="text-white/50 text-sm">Model: {{ llmConfig()?.model }}</p>
+                </div>
+              </div>
+            </div>
+          }
+          
+          <div>
+            <label class="block text-sm font-medium text-white/80 mb-2">API Anahtarı</label>
+            <input 
+              type="password"
+              [value]="apiKey()"
+              (input)="apiKey.set($any($event.target).value)"
+              placeholder="API anahtarınızı girin..."
+              class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <p class="text-white/40 text-xs mt-2">
+              @if (llmConfig()?.provider === 'Gemini') {
+                Gemini API anahtarınızı <a href="https://aistudio.google.com/apikey" target="_blank" class="text-purple-400 hover:underline">Google AI Studio</a>'dan alabilirsiniz.
+              } @else if (llmConfig()?.provider === 'OpenAI') {
+                OpenAI API anahtarınızı <a href="https://platform.openai.com/api-keys" target="_blank" class="text-purple-400 hover:underline">OpenAI Dashboard</a>'dan alabilirsiniz.
+              } @else if (llmConfig()?.provider === 'Qwen') {
+                Qwen API anahtarınızı <a href="https://dashscope.console.aliyun.com/" target="_blank" class="text-purple-400 hover:underline">Alibaba DashScope</a>'dan alabilirsiniz.
+              }
+            </p>
+          </div>
+          
+          <button 
+            (click)="configureLLM()"
+            [disabled]="!apiKey()"
+            class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+            Yapılandır ve Devam Et
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Step 2: Upload CVs -->
+    @if (currentStep() === 2) {
+      <div class="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 max-w-3xl mx-auto">
+        <h2 class="text-2xl font-bold text-white mb-6">📄 CV Yükle</h2>
+        
+        <!-- Drag & Drop Area -->
+        <div 
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          [class]="'border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ' + 
+            (isDragging() ? 'border-purple-500 bg-purple-500/10' : 'border-white/20 hover:border-purple-500/50')">
+          
+          <input 
+            type="file" 
+            multiple 
+            accept=".pdf,.docx,.doc,.txt"
+            (change)="onFileSelect($event)"
+            class="hidden"
+            #fileInput>
+          
+          <div (click)="fileInput.click()">
+            <svg class="w-16 h-16 mx-auto text-white/40 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <p class="text-white/80 text-lg mb-2">CV dosyalarınızı sürükleyip bırakın</p>
+            <p class="text-white/50 text-sm">veya tıklayarak seçin</p>
+            <p class="text-white/30 text-xs mt-2">Desteklenen formatlar: PDF, DOCX, DOC, TXT</p>
+          </div>
+        </div>
+        
+        <!-- Selected Files List -->
+        @if (selectedFiles().length > 0) {
+          <div class="mt-6 space-y-2">
+            <h3 class="text-white/80 font-medium mb-3">Seçilen Dosyalar ({{ selectedFiles().length }})</h3>
+            @for (file of selectedFiles(); track $index) {
+              <div class="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span class="text-white/80">{{ file.name }}</span>
+                  <span class="text-white/40 text-sm">({{ (file.size / 1024).toFixed(1) }} KB)</span>
+                </div>
+                <button (click)="removeFile($index)" class="text-red-400 hover:text-red-300">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+            }
+            
+            <button 
+              (click)="uploadFiles()"
+              [disabled]="isUploading()"
+              class="mt-4 w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+              @if (isUploading()) {
+                <span class="flex items-center justify-center gap-2">
+                  <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Yükleniyor...
+                </span>
+              } @else {
+                CV'leri Yükle ve Devam Et
+              }
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Step 3: Job Requirements -->
+    @if (currentStep() === 3) {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Requirements Form -->
+        <div class="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
+          <h2 class="text-2xl font-bold text-white mb-6">📋 İş Gereksinimleri</h2>
+          
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-white/80 mb-2">Pozisyon Adı *</label>
+              <input 
+                type="text"
+                [value]="jobRequirement().jobTitle"
+                (input)="updateJobTitle($event)"
+                placeholder="Örn: Senior Frontend Developer"
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-white/80 mb-2">Açıklama</label>
+              <textarea 
+                [value]="jobRequirement().description"
+                (input)="updateDescription($event)"
+                placeholder="İş tanımı..."
+                rows="3"
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+            </div>
+            
+            <!-- Required Skills -->
+            <div>
+              <label class="block text-sm font-medium text-white/80 mb-2">Zorunlu Yetenekler *</label>
+              <div class="flex gap-2">
+                <input 
+                  type="text"
+                  [value]="requiredSkillsInput()"
+                  (input)="requiredSkillsInput.set($any($event.target).value)"
+                  (keyup.enter)="addRequiredSkill()"
+                  placeholder="Yetenek ekle..."
+                  class="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <button (click)="addRequiredSkill()" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">
+                  Ekle
+                </button>
+              </div>
+              <div class="flex flex-wrap gap-2 mt-2">
+                @for (skill of jobRequirement().requiredSkills; track $index) {
+                  <span class="bg-purple-500/30 text-purple-200 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    {{ skill }}
+                    <button (click)="removeRequiredSkill($index)" class="hover:text-white">&times;</button>
+                  </span>
+                }
+              </div>
+            </div>
+            
+            <!-- Experience -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-white/80 mb-2">Min. Tecrübe (Yıl)</label>
+                <input 
+                  type="number"
+                  [value]="jobRequirement().minYearsOfExperience"
+                  (input)="updateMinExperience($event)"
+                  min="0"
+                  class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-white/80 mb-2">Max. Tecrübe (Yıl)</label>
+                <input 
+                  type="number"
+                  [value]="jobRequirement().maxYearsOfExperience"
+                  (input)="updateMaxExperience($event)"
+                  min="0"
+                  class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+              </div>
+            </div>
+            
+            <!-- Education -->
+            <div>
+              <label class="block text-sm font-medium text-white/80 mb-2">Minimum Eğitim Seviyesi</label>
+              <select 
+                [value]="jobRequirement().requiredDegree"
+                (change)="updateRequiredDegree($event)"
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="" class="bg-slate-800">Seçiniz</option>
+                <option value="Lise" class="bg-slate-800">Lise</option>
+                <option value="Ön Lisans" class="bg-slate-800">Ön Lisans</option>
+                <option value="Lisans" class="bg-slate-800">Lisans</option>
+                <option value="Yüksek Lisans" class="bg-slate-800">Yüksek Lisans</option>
+                <option value="Doktora" class="bg-slate-800">Doktora</option>
+              </select>
+            </div>
+            
+            <!-- Weights -->
+            <div class="bg-white/5 rounded-lg p-4">
+              <h3 class="text-white/80 font-medium mb-4">Puanlama Ağırlıkları</h3>
+              <div class="space-y-4">
+                <div>
+                  <div class="flex justify-between text-sm text-white/60 mb-1">
+                    <span>Yetenekler</span>
+                    <span>%{{ jobRequirement().skillsWeight }}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    [value]="jobRequirement().skillsWeight"
+                    (input)="updateSkillsWeight($event)"
+                    min="0" max="100" step="5"
+                    class="w-full accent-purple-500">
+                </div>
+                <div>
+                  <div class="flex justify-between text-sm text-white/60 mb-1">
+                    <span>Tecrübe</span>
+                    <span>%{{ jobRequirement().experienceWeight }}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    [value]="jobRequirement().experienceWeight"
+                    (input)="updateExperienceWeight($event)"
+                    min="0" max="100" step="5"
+                    class="w-full accent-purple-500">
+                </div>
+                <div>
+                  <div class="flex justify-between text-sm text-white/60 mb-1">
+                    <span>Eğitim</span>
+                    <span>%{{ jobRequirement().educationWeight }}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    [value]="jobRequirement().educationWeight"
+                    (input)="updateEducationWeight($event)"
+                    min="0" max="100" step="5"
+                    class="w-full accent-purple-500">
+                </div>
+                <p class="text-xs text-white/40 mt-2">
+                  Toplam: %{{ jobRequirement().skillsWeight + jobRequirement().experienceWeight + jobRequirement().educationWeight }}
+                  @if (jobRequirement().skillsWeight + jobRequirement().experienceWeight + jobRequirement().educationWeight !== 100) {
+                    <span class="text-yellow-400">(100 olmalı)</span>
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <button 
+              (click)="startAnalysis()"
+              [disabled]="!canAnalyze() || isAnalyzing()"
+              class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+              @if (isAnalyzing()) {
+                <span class="flex items-center justify-center gap-2">
+                  <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Analiz Ediliyor...
+                </span>
+              } @else {
+                🚀 Analizi Başlat
+              }
+            </button>
+          </div>
+        </div>
+        
+        <!-- Candidates Preview -->
+        <div class="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
+          <h2 class="text-2xl font-bold text-white mb-6">👥 Yüklenen CV'ler ({{ candidates().length }})</h2>
+          
+          <div class="space-y-3 max-h-[600px] overflow-y-auto">
+            @for (candidate of candidates(); track candidate.id) {
+              <div class="bg-white/5 rounded-lg p-4">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <h3 class="text-white font-medium">{{ candidate.fullName || 'İsim çıkarılamadı' }}</h3>
+                    <p class="text-white/50 text-sm">{{ candidate.fileName }}</p>
+                    @if (candidate.email) {
+                      <p class="text-white/40 text-xs mt-1">{{ candidate.email }}</p>
+                    }
+                  </div>
+                  <div class="text-right">
+                    @if (candidate.skills.length > 0) {
+                      <span class="text-purple-400 text-sm">{{ candidate.skills.length }} yetenek</span>
+                    }
+                  </div>
+                </div>
+                @if (candidate.skills.length > 0) {
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    @for (skill of candidate.skills.slice(0, 5); track $index) {
+                      <span class="bg-white/10 text-white/70 px-2 py-0.5 rounded text-xs">{{ skill.name }}</span>
+                    }
+                    @if (candidate.skills.length > 5) {
+                      <span class="text-white/40 text-xs">+{{ candidate.skills.length - 5 }} daha</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Step 4: Results -->
+    @if (currentStep() === 4) {
+      <div class="space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-white">📊 Analiz Sonuçları</h2>
+          <button 
+            (click)="resetAndStartOver()"
+            class="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-colors">
+            Yeni Analiz Başlat
+          </button>
+        </div>
+        
+        <div class="grid gap-4">
+          @for (result of results(); track result.id; let i = $index) {
+            <div class="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
+              <div class="flex items-start gap-6">
+                <!-- Rank -->
+                <div class="flex-shrink-0">
+                  <div [class]="'w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold ' + 
+                    (i === 0 ? 'bg-yellow-500 text-yellow-900' : 
+                     i === 1 ? 'bg-gray-300 text-gray-700' : 
+                     i === 2 ? 'bg-amber-600 text-amber-100' : 'bg-white/10 text-white')">
+                    {{ i + 1 }}
+                  </div>
+                </div>
+                
+                <!-- Info -->
+                <div class="flex-1">
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <h3 class="text-xl font-bold text-white">{{ result.candidate?.fullName || 'Bilinmeyen Aday' }}</h3>
+                      <p class="text-white/50 text-sm">{{ result.candidate?.fileName }}</p>
+                      @if (result.candidate?.email) {
+                        <p class="text-white/40 text-xs mt-1">{{ result.candidate?.email }}</p>
+                      }
+                    </div>
+                    
+                    <!-- Total Score -->
+                    <div class="text-right">
+                      <div [class]="'text-4xl font-bold ' + getScoreColor(result.totalScore)">
+                        %{{ result.totalScore | number:'1.0-1' }}
+                      </div>
+                      <p class="text-white/50 text-sm">Toplam Puan</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Score Bars -->
+                  <div class="grid grid-cols-3 gap-4 mt-6">
+                    <div>
+                      <div class="flex justify-between text-sm mb-1">
+                        <span class="text-white/60">Yetenekler</span>
+                        <span [class]="getScoreColor(result.skillsScore)">%{{ result.skillsScore | number:'1.0-1' }}</span>
+                      </div>
+                      <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div [class]="'h-full transition-all ' + getScoreBgColor(result.skillsScore)" 
+                             [style.width.%]="result.skillsScore"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="flex justify-between text-sm mb-1">
+                        <span class="text-white/60">Tecrübe</span>
+                        <span [class]="getScoreColor(result.experienceScore)">%{{ result.experienceScore | number:'1.0-1' }}</span>
+                      </div>
+                      <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div [class]="'h-full transition-all ' + getScoreBgColor(result.experienceScore)" 
+                             [style.width.%]="result.experienceScore"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="flex justify-between text-sm mb-1">
+                        <span class="text-white/60">Eğitim</span>
+                        <span [class]="getScoreColor(result.educationScore)">%{{ result.educationScore | number:'1.0-1' }}</span>
+                      </div>
+                      <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div [class]="'h-full transition-all ' + getScoreBgColor(result.educationScore)" 
+                             [style.width.%]="result.educationScore"></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Details -->
+                  <div class="grid grid-cols-2 gap-6 mt-6">
+                    @if (result.skillsAnalysis) {
+                      <div>
+                        <h4 class="text-white/80 font-medium mb-2">Eşleşen Yetenekler</h4>
+                        <div class="flex flex-wrap gap-1">
+                          @for (skill of result.skillsAnalysis.matchedSkills; track $index) {
+                            <span class="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-xs">{{ skill }}</span>
+                          }
+                        </div>
+                        @if (result.skillsAnalysis.missingSkills.length > 0) {
+                          <h4 class="text-white/80 font-medium mb-2 mt-3">Eksik Yetenekler</h4>
+                          <div class="flex flex-wrap gap-1">
+                            @for (skill of result.skillsAnalysis.missingSkills; track $index) {
+                              <span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-xs">{{ skill }}</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                    
+                    <div>
+                      @if (result.experienceAnalysis) {
+                        <p class="text-white/60 text-sm">
+                          <span class="text-white">{{ result.experienceAnalysis.totalYearsOfExperience }}</span> yıl tecrübe, 
+                          <span class="text-white">{{ result.experienceAnalysis.numberOfCompanies }}</span> şirkette çalışmış
+                        </p>
+                      }
+                      @if (result.educationAnalysis) {
+                        <p class="text-white/60 text-sm mt-1">
+                          {{ result.educationAnalysis.actualDegree }} - {{ result.educationAnalysis.actualField }}
+                        </p>
+                      }
+                    </div>
+                  </div>
+                  
+                  <!-- AI Summary -->
+                  @if (result.aiSummary) {
+                    <div class="mt-4 p-4 bg-white/5 rounded-lg">
+                      <h4 class="text-white/80 font-medium mb-2">🤖 AI Değerlendirmesi</h4>
+                      <p class="text-white/60 text-sm">{{ result.aiSummary }}</p>
+                      @if (result.strengths) {
+                        <p class="text-green-400 text-sm mt-2"><strong>Güçlü Yönler:</strong> {{ result.strengths }}</p>
+                      }
+                      @if (result.weaknesses) {
+                        <p class="text-orange-400 text-sm mt-1"><strong>Gelişim Alanları:</strong> {{ result.weaknesses }}</p>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </main>
+</div>
