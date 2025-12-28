@@ -44,6 +44,7 @@ export interface Candidate {
   phone: string;
   fileName: string;
   uploadedAt: Date;
+  isParsed: boolean;
   skills: Skill[];
   experiences: Experience[];
   education?: Education;
